@@ -1,0 +1,406 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Measurement points</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.5.1/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin=""/>
+
+    <style>
+      html,body {
+        width: 100%;
+        height: 100%;
+        margin: 2%;
+        padding: 0;
+      }
+      #map {
+        position: absolute;
+        bottom: 2%;
+        top: 2%;
+        width: 90%;
+        height: 95%;
+        }
+      .info { padding: 6px 8px; font: 14px/16px Arial, Helvetica, sans-serif; background: white; background: rgba(255,255,255,0.8); box-shadow: 0 0 15px rgba(0,0,0,0.2); border-radius: 5px; } .info h4 { margin: 0 0 5px; color: #777; }
+      .legend { text-align: left; line-height: 18px; color: #555; } .legend i { width: 18px; height: 18px; float: left; margin-right: 8px; opacity: 0.7; }
+    </style>
+  </head>
+  <body>
+      <div id="map"></div>
+      <script src="https://unpkg.com/leaflet@1.5.1/dist/leaflet.js" integrity="sha512-GffPMF3RvMeYyc1LWMHtK8EbPv0iNZ8/oTtHPx9/cc2ILxQ+u905qIwdpULaqDkyBKgOaB57QTMg7ztg8Jm2Og==" crossorigin=""></script>
+      <script src="https://unpkg.com/leaflet" type="text/javascript"></script>
+      <script src="https://unpkg.com/leaflet-ant-path" type="text/javascript"></script>
+      <link rel="stylesheet" href="https://ppete2.github.io/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.css"/>
+      <script src="https://ppete2.github.io/Leaflet.PolylineMeasure/Leaflet.PolylineMeasure.js"></script>
+    <script>
+
+
+      var stationNames = L.layerGroup();
+      var stationPoints = L.layerGroup();
+
+ 
+      var routeLine = L.layerGroup();
+      var antLine   = L.layerGroup();
+
+//      var stationPoints = L.layerGroup();
+	  //REPLACE WITH POINTS//
+
+ 
+
+//    GRID LINES
+      var latlongrid = L.layerGroup();
+      latlongrid.onAdd = function(map) {
+        for (var i = 50; i < 71; i++) {L.polyline([[i*1.0, -180.0],[i*1.0, 180.0]], {color: 'black', weight: 1, opacity: 0.2}).addTo(this);}
+        for (var i = 0; i < 61; i++) {L.polyline([[0.0, i*1.0],[80.0, i*1.0],], {color: 'black', weight: 1, opacity: 0.2}).addTo(this);}
+      }
+
+      function style(feature) {
+        return {
+          weight: 2,
+          opacity: 1,
+          color: 'white',
+          dashArray: '3',
+          fillOpacity: 0.7,
+          fillColor: getColor(feature.properties.visits)
+        };
+      }
+
+      function highlightFeature(e) {
+        var layer = e.target;
+        layer.setStyle({
+          weight: 5,
+          color: '#666',
+          dashArray: '',
+          fillOpacity: 0.7
+        });
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {layer.bringToFront();}
+        info.update(layer.feature.properties);
+      }
+
+      var geojson;
+
+      function resetHighlight(e) {
+        geojson.resetStyle(e.target);
+        info.update();
+      }
+
+      function zoomToFeature(e) {
+        map.fitBounds(e.target.getBounds());
+      }
+
+      function onEachFeature(feature, layer) {
+        layer.on({
+          mouseover: highlightFeature,
+          mouseout: resetHighlight,
+          click: zoomToFeature
+        });
+      }
+
+//    INFO
+      var info = L.control();
+
+      info.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info');
+        this.update();
+        return this._div;
+      };
+
+      info.update = function (props) {
+        this._div.innerHTML = '<h4 style="color: #0000CC;">Cruise route of the  cruise 0/0</h4>Water exchange and instrument validation<br>2020-10-07 - 2020-10-12';
+      };
+
+//    LEGEND
+      var legend = L.control({position: 'bottomright'});
+
+//      legend.onAdd = function (map) {
+//        var div = L.DomUtil.create('div', 'info legend'),
+//            clrRed = 'red',
+//            clrGreen = 'green';
+//        div.innerHTML = '<h4 style="color: #0000CC;">Color of stations</h4>'+
+//          '<i style="background: '+clrGreen+'"></i> in Finnish EEZ<br>'+
+//          '<i style="background: '+clrRed+'"></i> ' + 'outside of Finnish EEZ';
+//        return div;
+//     };
+
+//    CURSOR POSITION
+      var cursorinfo = L.control({position: 'bottomleft'});
+
+      cursorinfo.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info info2');
+        this.update();
+        return this._div;
+      };
+
+      cursorinfo.update = function (props) {
+        this._div.innerHTML = 'Cursor position<br/>';
+      };
+
+//    MAP
+      var map = L.map('map', {center:[ 59.320000,   22.061333], zoom: 5});
+      mapLink = '<a href="http://openstreetmap.org">OpenStreetMap</a>';
+
+      var strmaplayer = L.tileLayer(
+        'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; ' + mapLink + ' Contributors',
+        maxZoom: 20,
+      }).addTo(map);
+
+      var positron = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+        attribution: '�OpenStreetMap, �CartoDB',
+      });
+
+      var Esri_OceanBasemap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Sources: GEBCO, NOAA, CHS, OSU, UNH, CSUMB, National Geographic, DeLorme, NAVTEQ, and Esri',
+        maxZoom: 20
+      });
+
+      var Esri_WorldTopoMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Sources: Esri, HERE, Garmin, Intermap, increment P Corp., GEBCO, USGS, FAO, NPS, NRCAN, GeoBase, IGN, Kadaster NL, Ordnance Survey, Esri Japan, METI, Esri China (Hong Kong), (c) OpenStreetMap contributors, and the GIS User Community',
+        maxZoom: 20
+      });
+
+      var Esri_WorldStreetMap = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Sources: Esri, HERE, Garmin, USGS, Intermap, INCREMENT P, NRCan, Esri Japan, METI, Esri China (Hong Kong), Esri Korea, Esri (Thailand), NGCC, (c) OpenStreetMap contributors, and the GIS User Community',
+        maxZoom: 20
+      });
+
+      var opentopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: '�OpenStreetMap, �CartoDB',
+      });
+
+      var bathymetryLayer = L.tileLayer.wms("http://ows.emodnet-bathymetry.eu/wms", {
+        layers: 'emodnet:mean_atlas_land',
+        format: 'image/png',
+        transparent: true,
+        attribution: "Emodnet bathymetry",
+        opacity: 0.8
+      });
+
+      var coastlinesLayer = L.tileLayer.wms("http://ows.emodnet-bathymetry.eu/wms", {
+        layers: 'coastlines',
+        format: 'image/png',
+        transparent: true,
+        attribution: "Emodnet bathymetry",
+        opacity: 0.8
+      });
+
+      var bathymetryGroupLayer = L.layerGroup([bathymetryLayer, coastlinesLayer]);
+
+      var contourLayer = L.tileLayer.wms("http://ows.emodnet-bathymetry.eu/wms", {
+        layers: 'emodnet:contours',
+        format: 'image/png',
+        transparent: true,
+        attribution: "Emodnet bathymetry",
+        opacity: 0.8
+      });
+
+      var depthcontours = L.layerGroup([contourLayer]);
+
+      L.Control.MousePosition = L.Control.extend({
+        options: {
+          position: 'bottomleft',
+          separator: '<br>',
+          emptyString: 'Cursor coordinates<br>0&deg;N<br>0&deg;E',
+          lngFirst: false,
+          numDigits: 5,
+          lngFormatter: function(num) {
+            var direction = (num < 0) ? 'W' : 'E';
+            var degzero = (num < 10) ? '0' : '';
+            var minzero = ((Math.abs(num)-Math.abs(Math.trunc(num)))*60 < 10) ? '0' : '';
+            var formatted = degzero + Math.abs(L.Util.formatNum(num, 5)) + '&deg; ' + direction + ' = ' + degzero + Math.abs(Math.trunc(num)) + '&deg; ' + minzero + L.Util.formatNum((Math.abs(num)-Math.abs(Math.trunc(num)))*60,2) + '&lsquo; ' + direction;
+            return formatted;
+          },
+          latFormatter: function(num) {
+            var direction = (num < 0) ? 'S' : 'N';
+            var degzero = (num < 10) ? '0' : '';
+            var minzero = ((Math.abs(num)-Math.abs(Math.trunc(num)))*60 < 10) ? '0' : '';
+            var formatted = degzero + Math.abs(L.Util.formatNum(num, 5)) + '&deg; ' + direction + ' = ' + degzero + Math.abs(Math.trunc(num)) + '&deg; ' + minzero + L.Util.formatNum((Math.abs(num)-Math.abs(Math.trunc(num)))*60,2) + '&lsquo; ' + direction;
+            return formatted;
+          },
+          prefix: '<h4 style="color: #0000CC;">Cursor position</h4>'
+        },
+
+        onAdd: function (map) {
+          this._container = L.DomUtil.create('div', 'leaflet-control-mouseposition');
+          L.DomEvent.disableClickPropagation(this._container);
+          map.on('mousemove', this._onMouseMove, this);
+//          this._container.innerHTML=this.options.emptyString;
+          return this._container;
+        },
+
+        onRemove: function (map) {
+          map.off('mousemove', this._onMouseMove)
+        },
+
+        _onMouseMove: function (e) {
+          var lng = this.options.lngFormatter ? this.options.lngFormatter(e.latlng.lng) : L.Util.formatNum(e.latlng.lng, this.options.numDigits);
+          var lat = this.options.latFormatter ? this.options.latFormatter(e.latlng.lat) : L.Util.formatNum(e.latlng.lat, this.options.numDigits);
+          var value = this.options.lngFirst ? lng + this.options.separator + lat : lat + this.options.separator + lng;
+          var prefixAndValue = this.options.prefix + value;
+//          this._container.innerHTML = prefixAndValue;
+          cursorinfo._div.innerHTML = prefixAndValue;
+
+        }
+      });
+
+      var fairways = new L.LayerGroup();
+      var fairWays =
+        L.tileLayer.wms('https://extranet.liikennevirasto.fi/inspirepalvelu/avoin/wms', {
+          layers: 'vaylat,vaylaalueet',
+          transparent: true,
+          format: 'image/png',
+          maxZoom: 18,
+          minZoom: 7,
+          attribution: 'CC 4.0 Liikennevirasto. Ei navigointikäyttöön. Ei täytä virallisen merikartan vaatimuksia.',
+      }).addTo(fairways);
+
+      var eez = new L.LayerGroup();
+      var eeZ =
+        L.tileLayer.wms('http://geo.vliz.be/geoserver/MarineRegions/wms', {
+          layers: 'eez_boundaries',
+          transparent: true,
+          format: 'image/png',
+          attribution: 'Marineregions.org.',
+      }).addTo(eez);
+
+      var internalwaters = new L.LayerGroup();
+      var internalWaters =
+        L.tileLayer.wms('http://geo.vliz.be/geoserver/MarineRegions/wms', {
+          layers: 'eez_internal_waters',
+          transparent: true,
+          format: 'image/png',
+          attribution: 'Marineregions.org.',
+      }).addTo(internalwaters);
+
+      var internalwaters12 = new L.LayerGroup();
+      var internalWaters12 =
+        L.tileLayer.wms('http://geo.vliz.be/geoserver/MarineRegions/wms', {
+          layers: 'eez_12nm',
+          transparent: true,
+          format: 'image/png',
+          attribution: 'Marineregions.org.',
+      }).addTo(internalwaters12);
+
+      var helcomareaboundaries = new L.LayerGroup();
+      var helcomAreaboundaries =
+        L.tileLayer.wms('https://maps.helcom.fi/arcgis/services/MADS/Sea_environmental_monitoring/MapServer/WmsServer', {
+          layers: '89',
+          transparent: true,
+          format: 'image/png',
+          attribution: 'HELCOM.',
+      }).addTo(helcomareaboundaries);
+
+      var helcomareas = new L.LayerGroup();
+      var helcomAreas =
+        L.tileLayer.wms('https://maps.helcom.fi/arcgis/services/MADS/Sea_environmental_monitoring/MapServer/WmsServer', {
+          layers: '88',
+          transparent: true,
+          format: 'image/png',
+          attribution: 'HELCOM.',
+      }).addTo(helcomareas);
+
+      var mNavAttr = '--- Merikorttipalvelu perustuu Liikenneviraston tuottaman rasterimuotoiseen merikartta-aineistoon. Käyttölupa CC 4.0'
+        +' Lähde: Liikennevirasto. Ei navigointikäyttöön. Ei täytä virallisen merikartan vaatimuksia.';
+
+      var navigate = new L.LayerGroup();
+      var Navigate     =
+        L.tileLayer.wms('https://julkinen.traficom.fi/s57/wms', {
+          layers: 'cells',
+          transparent: true,
+          format: 'image/png',
+          minZoom: 7,
+          attribution: mNavAttr
+      }).addTo(navigate);
+
+      var bshcwater = new L.LayerGroup();
+      var Bshcwater =
+        L.tileLayer.wms('http://data.bshc.pro/ogc/bsbd-0.0.4/wms', {
+          layers: 'water',
+          transparent: true,
+          format: 'image/png',
+          minZoom: 5,
+          attribution: 'BSHC'
+      }).addTo(bshcwater);
+
+      var mllAttr =' Maanmittauslaitoksen nimipalvelu';
+      var nimet = new L.LayerGroup();
+      var Nimet =
+        L.tileLayer.wms('https://inspire-wms.maanmittauslaitos.fi/inspire-wms/GN/wms', {
+          layers: 'GN.GeographicalNames',
+          transparent: true,
+          format: 'image/png',
+          minzoom: 5,
+          attribution: mllAttr
+      }).addTo(nimet);
+
+      var openseamap = new L.LayerGroup();
+      var openSeaMap =
+        L.tileLayer('http://tiles.openseamap.org/seamark/{z}/{x}/{y}.png', {minZoom: 6}).addTo(openseamap);
+
+      L.Map.mergeOptions({positionControl: false});
+
+      L.Map.addInitHook(function () {
+        if (this.options.positionControl) {
+          this.positionControl = new L.Control.MousePosition();
+          this.addControl(this.positionControl);
+        }
+      });
+
+      L.control.mousePosition = function (options) {return new L.Control.MousePosition(options);};
+      L.control.mousePosition().addTo(map);
+
+      L.control.scale ({maxWidth:240, metric:true, imperial:false, position: 'bottomleft'}).addTo (map);
+      let polylineMeasure = L.control.polylineMeasure ({position:'topleft', unit:'metres', showBearings:true, clearMeasurementsOnStop: false, showClearControl: true, showUnitControl: true})
+      polylineMeasure.addTo (map);
+      function debugevent(e) { console.debug(e.type, e, polylineMeasure._currentLine) }
+      map.on('polylinemeasure:toggle', debugevent);
+      map.on('polylinemeasure:start', debugevent);
+      map.on('polylinemeasure:resume', debugevent);
+      map.on('polylinemeasure:finish', debugevent);
+      map.on('polylinemeasure:clear', debugevent);
+      map.on('polylinemeasure:add', debugevent);
+      map.on('polylinemeasure:insert', debugevent);
+      map.on('polylinemeasure:move', debugevent);
+      map.on('polylinemeasure:remove', debugevent);
+
+      info.addTo(map);
+      cursorinfo.addTo(map);
+//      legend.addTo(map);
+
+//    Stations and route line are on the map by default, other layers not
+      stationNames.addTo(map);
+      stationPoints.addTo(map);
+
+      var baseMaps = {
+        "StreetMap"             : strmaplayer,
+        "Positron"              : positron,
+        "ESRI OceanBasemap"     : Esri_OceanBasemap,
+        "ESRI Worl_Topo_Map"    : Esri_WorldTopoMap,
+        "ESRI World_Street_Map" : Esri_WorldStreetMap,
+        "Topo"                  : opentopo}
+
+      var overlayMaps = {
+        "EMODnet Bathymetry"            : bathymetryGroupLayer,
+        "BSHC Baltic Sea Bathymetry"    : bshcwater,
+        "EMODnet depth contours"        : depthcontours,
+        "EEZ"                           : eez,
+        "Internal waters"               : internalwaters,
+        "Internal waters 12 nm"         : internalwaters12,
+        "HELCOM areas"                  : helcomareas,
+        "HELCOM area boundaries"        : helcomareaboundaries,
+        "Open seamap"                   : openseamap,
+        "Finnish fairways"              : fairways,
+        "Finnish navigation chart"      : navigate,
+        "Latitude-longitude grid"       : latlongrid,
+        "Stations Names"        		: stationNames,
+        "Stations Points"        		: stationPoints,
+        "Animated route of the cruise"  : antLine,
+        "Finnish place names"           : nimet
+      }
+
+      L.control.layers(baseMaps, overlayMaps).addTo(map);
+
+    </script>
+  </body>
+</html>
+

@@ -16,6 +16,8 @@ import datetime as dt
 import cmocean as cmo
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
+from cartopy.io.shapereader import Reader
+from cartopy.feature import ShapelyFeature
 import matplotlib.dates as mdates
 import math
 import gsw
@@ -29,7 +31,7 @@ out_dir = "D:\\Data\\figures\\"
 #pickup_height = np.abs(np.diff(pick_up_lims)[1])*1.1
 
 #Circle
-out_filename = "map_pickup_zone_circle.png"
+out_filename = "map_pickup_zone_rectangle.png"
 map_area = [17.5,22.0,56.6,58.5]
 pick_up_lims = ((19.635, 20.468),(57.05, 57.5))
 pick_up_center = (np.mean(pick_up_lims[0]), np.mean(pick_up_lims[1]))
@@ -55,11 +57,20 @@ ax.set_aspect('auto')
 ax.coastlines('10m')
 ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m',\
                                         edgecolor='face', facecolor='#555570'))
+#ax.add_feature(cfeature.NaturalEarthFeature('cultural', 'admin_0_pacific_groupings', '10m',edgecolor='black',facecolor = 'none'))
+ax.add_feature(cfeature.NaturalEarthFeature('cultural', 'admin_0_boundary_lines_land', '10m',edgecolor='black',facecolor = 'none',alpha = 0.1))
 
-pick_up_area = mp.patches.Ellipse(pick_up_center, pickup_width, pickup_height,\
+EEZ = ShapelyFeature(Reader("C:\\Users\\siirias\\Downloads\\World_EEZ_v11_20191118\\eez_boundaries_v11.shp").geometries(),
+                                the_proj, edgecolor='blue', facecolor = 'none', linewidth = 3.0, alpha = 0.3)
+ax.add_feature(EEZ)
+
+#pick_up_area = mp.patches.Ellipse(pick_up_center, pickup_width, pickup_height,\
+#                                  color = "#55aa55", alpha = 0.3)
+
+pick_up_area = mp.patches.Rectangle((19.6,57),20.5-19.6,57.5-57.0,\
                                   color = "#55aa55", alpha = 0.3)
                                            
-ax.add_artist(pick_up_area)                                            
+ax.add_artist(pick_up_area)                                      
 #plt.plot(lon_list,lat_list,'bo',transform = ccrs.PlateCarree())
 #plt.plot(lon_list,lat_list,'b-',transform = ccrs.PlateCarree())
 for [lat,lon,n] in points:

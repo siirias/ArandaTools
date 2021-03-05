@@ -460,15 +460,17 @@ for plot_set in plot_sets:
         for [x_axis, x_label] in zip([time_list, lat_list, lon_list, dist_list],["Time","Latitude","Longitude","Distance (NM)"]):
             arranged_dat = sort_by_axis(profile_data,x_axis)
             sorted_x = np.sort(x_axis)
+            if(x_label == "Time"):
+                sorted_x = list(map(lambda x:x.to_datetime64(),sorted_x))
             fig = plt.figure(figsize=(15,7))
             plt.pcolormesh(sorted_x, depth_axis, arranged_dat, shading = 'auto', cmap = cmap)
             plt.gca().invert_yaxis()
             if(x_label == "Latitude"):
                 plt.gca().invert_xaxis()
-            if(x_label == "Time"):
-                tick_names = list(map(lambda x:x.strftime("%m-%d %H h"),x_axis))
-                the_step = max(1,int(len(x_axis)/10))
-                plt.xticks(x_axis[::the_step],tick_names[::the_step])
+#            if(x_label == "Time"):
+#                tick_names = list(map(lambda x:x.strftime("%m-%d %H h"),x_axis))
+#                the_step = max(1,int(len(x_axis)/10))
+#                plt.xticks(x_axis[::the_step],tick_names[::the_step])
 #                ax = fig.get_axes()[0]
 #                if((x_axis[-1]-x_axis[0]).total_seconds()<2*60*60*24):
 #                    ax.xaxis.set_major_locator(mdates.HourLocator())
