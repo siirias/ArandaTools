@@ -75,7 +75,9 @@ filtered_indices = [] # indices listed here are NEVER used. add if something is 
 cruise_year = '21'
 plot_sets =[
         ['snit_IU',117,123],
-        ['snit_GoF',101,109],
+        ['snit_Start',101,109],
+        ['snit_I',129,138],
+        ['snit_H',139,145],
         ]
 map_shape = (5,10)
 JustOne = False
@@ -88,7 +90,13 @@ JustOne = False
 #JustOne = 'hila' #False
 #JustOne = 'snit_IU' #False
 
-if(JustOne):
+if(not JustOne): #default values
+        map_area = None # None or list: [lat_min,lat_max,lon_min,lon_max]
+        #Variable info: variable number, and min max values for plots, or None to both.
+        variable_info = [[1,None,None],[4,None,None],\
+                         [7,None,None],[8,None,None]]
+        axes_to_plot = ['distance'] #'latitude', longitude', 'distance', 'time'
+else: #Special cse for specific snit
     if(JustOne == "snit_IU"):
         plot_sets = [['snit_IU',343,350]]
         map_area = None # None or list: [lat_min,lat_max,lon_min,lon_max]
@@ -101,13 +109,6 @@ if(JustOne):
         #Variable info: variable number, and min max values for plots, or None to both.
         variable_info = [[1,None,None],[4,None,None],\
                          [7,None,None],[8,None,None]]
-
-else:
-        map_area = None # None or list: [lat_min,lat_max,lon_min,lon_max]
-        #Variable info: variable number, and min max values for plots, or None to both.
-        variable_info = [[1,None,None],[4,None,None],\
-                         [7,None,None],[8,None,None]]
-
 
 #map_shape = None
 def sort_by_axis(data, axis):
@@ -402,7 +403,22 @@ for plot_set in plot_sets:
         for i in range(len(ctd_datas)):
             length = len(ctd_datas[i][columns[variable]])
             profile_data[0:length,i] = ctd_datas[i][columns[variable]]
-        for [x_axis, x_label] in zip([time_list, lat_list, lon_list, dist_list],["Time","Latitude","Longitude","Distance (NM)"]):
+        axis_list = []
+        label_list = []
+        if('time' in axes_to_plot):
+            axis_list.append(time_list)
+            label_list.append("Time")
+        if('distance' in axes_to_plot):
+            axis_list.append(dist_list)
+            label_list.append("Distance (NM)")
+        if('latitude' in axes_to_plot):
+            axis_list.append(lat_list)
+            label_list.append("Latitude")
+        if('longitude' in axes_to_plot):
+            axis_list.append(lon_list)
+            label_list.append("Longitude")
+            
+        for [x_axis, x_label] in zip(axis_list,label_list):
             arranged_dat = sort_by_axis(profile_data,x_axis)
             sorted_x = np.sort(x_axis)
             if(x_label == "Time"):
@@ -445,14 +461,23 @@ for plot_set in plot_sets:
                                 facecolor='w',dpi=fig_dpi,bbox_inches='tight')
             if(close_figures_when_saved):
                 plt.close()
+                
+                
     # plot the map with the points included:
     the_proj = ccrs.PlateCarree()
     fig = plt.figure(figsize=map_shape)
     ax = plt.axes(projection=the_proj)
     if(map_area is not None):
         ax.set_extent(map_area)
+        tmp_map_area = map_area  # used to check ranges for texts in map etc.
     else:
-        ax.set_extent([np.min(lon_list),np.max(lon_list),np.min(lat_list),np.max(lat_list)])
+        lon_buf = 0.1*(np.max(lon_list) - np.min(lon_list))
+        lat_buf = 0.1*(np.max(lat_list) - np.min(lat_list))
+        tmp_map_area = [np.min(lon_list)-lon_buf,
+                       np.max(lon_list)+lon_buf,
+                       np.min(lat_list)-lat_buf,
+                       np.max(lat_list)+lon_buf]
+        ax.set_extent(tmp_map_area)
     gl = ax.gridlines(crs=the_proj, draw_labels=True,
               linewidth=2, color='gray', alpha=0.3, linestyle='-')
     gl.xlabels_top = False
@@ -463,11 +488,11 @@ for plot_set in plot_sets:
     plt.plot(lon_list,lat_list,'bo',transform = ccrs.PlateCarree())
     plt.plot(lon_list,lat_list,'b-',transform = ccrs.PlateCarree())
     for [n,lat,lon] in zip(station_names,lat_list,lon_list):
-        if(map_area is not None and \
-               lon>map_area[0] and\
-               lon<map_area[1] and\
-               lat>map_area[2] and\
-               lat<map_area[3]):
+        if(tmp_map_area is not None and \
+               lon>tmp_map_area[0] and\
+               lon<tmp_map_area[1] and\
+               lat>tmp_map_area[2] and\
+               lat<tmp_map_area[3]):
             plt.text(lon,lat,n,transform = ccrs.PlateCarree(),alpha=0.5)
     plt.title("{}, from {} to {} ({})".format(long_names[variable],\
               station_names[0],\
