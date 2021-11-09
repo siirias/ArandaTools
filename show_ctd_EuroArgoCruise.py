@@ -22,14 +22,14 @@ import warnings
 warnings.simplefilter("ignore") #applises some depracating time-axis thing.
 C = "sal00"
 T = "t090C"
-D = "prDM"
+D = "depSM"
 #C = "sal00"  # RBR Test
 #T = "tnc90C"  # RBR Test
 #D = "prM"  # RBR Test
 #in_dir = "C:\\Users\\siirias\\Documents\\Aranda2020\\CTD_DATAA\\"
 in_dir = "D:\\Data\\EuroArgoCruise\\sbetulos\\"
 #in_dir = "D:\\Data\\ArandaVEMIVE2020\\RBRTEST\\"
-out_dir = "D:\\Data\\figures\\Aranda\\EuroARgoCruise\\"
+out_dir = "D:\\Data\\figures\\Aranda\\EuroARgoCruise\\new_shape\\"
 out_dir_add = "\\"
 close_figures_when_saved = True
 colormaps = [
@@ -64,9 +64,11 @@ colormaps = [
 alpha_val = 0.5
 grid_alpha = 0.4
 fig_dpi = 300
+plot_station_names = True
 #highlight = "SBD1"
 highlight = None
 max_labels = 20
+depth_max = None # none = maximum of the data.
 #start_ind = 0
 #end_ind = -1
 #start_ind = 296
@@ -76,11 +78,25 @@ cruise_year = '21'
 plot_sets =[
         ['snit_IU',117,123],
         ['snit_Start',101,109],
+#        ['snit_GD',110,116],
         ['snit_I',129,138],
         ['snit_H',139,145],
+        ['snit_G',146,152],
+        ['snit_F',153, 159],
+        ['snit_E',160, 167],
+        ['snit_D',168, 175],
+        ['snit_C',176, 182],
+        ['snit_B',183, 189],
+        ['snit_A',190, 196],
+        ['snit_G_crop',147,151],
+        ['snit_G_new',203,207],
+        ['WholeGrid',129,196],
+        ['WholeTrip',101,245]
         ]
 map_shape = (5,10)
-JustOne = False
+#plot_size = (7,15)
+plot_size = (4,8)
+JustOne = None
 #JustOne = 'snit_Lagsk' #False
 #JustOne = 'total' #False
 #JustOne = 'RBRTEST' #False
@@ -93,20 +109,45 @@ JustOne = False
 if(not JustOne): #default values
         map_area = None # None or list: [lat_min,lat_max,lon_min,lon_max]
         #Variable info: variable number, and min max values for plots, or None to both.
-        variable_info = [[1,None,None],[4,None,None],\
-                         [7,None,None],[8,None,None]]
+        # 1 = T, 4 = O, 7 = S , 8 = D
+        variable_info = [[1,7.0,2.0],
+                         [4,8.0,4.5],\
+                         [7,4.0,8.0],
+                         [8,5.3,4.3]]
         axes_to_plot = ['distance'] #'latitude', longitude', 'distance', 'time'
+        depth_max = 140.0
 else: #Special cse for specific snit
+    tmp_plot_set = None
+    for i in plot_sets:
+        if(i[0] == JustOne):
+            plot_sets = [i]
+            break;
     if(JustOne == "snit_IU"):
         plot_sets = [['snit_IU',343,350]]
         map_area = None # None or list: [lat_min,lat_max,lon_min,lon_max]
         #Variable info: variable number, and min max values for plots, or None to both.
         variable_info = [[1,None,None],[4,None,None],\
                          [7,None,None],[8,None,None]]
+    if(JustOne == "snit_GD"):
+        plot_sets = [['snit_GD',110,116]]
+        map_area = None # None or list: [lat_min,lat_max,lon_min,lon_max]
+        #Variable info: variable number, and min max values for plots, or None to both.
+        depth_max = None
+        variable_info = [[1,None,None],[4,None,None],\
+                         [7,None,None],[8,None,None]]
     if(JustOne == "snit_Lagsk"):
         plot_sets = [['snit_lagsk',[262,351,352,353,354,455,356,357]]]
         map_area = None # None or list: [lat_min,lat_max,lon_min,lon_max]
         #Variable info: variable number, and min max values for plots, or None to both.
+        variable_info = [[1,None,None],[4,None,None],\
+                         [7,None,None],[8,None,None]]
+    if(JustOne == "WholeTrip"):
+        plot_sets = [['WholeTrip',101,245]]
+        plot_station_names = False
+        map_area = None # None or list: [lat_min,lat_max,lon_min,lon_max]
+        #Variable info: variable number, and min max values for plots, or None to both.
+        axes_to_plot = ['distance', 'time'] #'latitude', longitude', 'distance', 'time'
+        depth_max = None
         variable_info = [[1,None,None],[4,None,None],\
                          [7,None,None],[8,None,None]]
 
@@ -305,6 +346,18 @@ for plot_set in plot_sets:
         plt.plot(ctd_data[C], ctd_data[T], zorder = 9,\
                      label = None, color = color, alpha = 0.1)
         file_no +=1
+    # Get the fixed limits for T and S, if defined
+    for v in variable_info:
+        if(v[0] == 1):
+            if(v[1]):
+                min_T = v[1]
+            if(v[2]):
+                max_T = v[2]
+        if(v[0] == 4):
+            if(v[1]):
+                min_S = v[1]
+            if(v[2]):
+                max_S = v[2]
     contour_T = np.linspace(min_T,max_T,128)
     contour_S = np.linspace(min_S,max_S,128)
     x_T,y_C = np.meshgrid(contour_T,contour_S)
@@ -337,7 +390,7 @@ for plot_set in plot_sets:
         variable = var_info[0]
         value_min = var_info[1]
         value_max = var_info[2]
-        plt.figure(figsize=(7,15))
+        plt.figure(figsize=plot_size)
         try:
             cmap = colormaps[variable]
         except:
@@ -361,7 +414,7 @@ for plot_set in plot_sets:
                   station_names[0],\
                   station_names[-1],\
                   plot_set[0]))
-        plt.ylabel("{} ({})".format(long_names[0], unit_names[0]))
+        plt.ylabel("{} ({})".format(long_names[9], unit_names[9]))
         plt.xlabel("{} ({})".format(long_names[variable], unit_names[variable]))
         plt.grid(alpha=grid_alpha)
         filename = "{}_{}_to_{}_profile_cloud.png".format(
@@ -423,11 +476,38 @@ for plot_set in plot_sets:
             sorted_x = np.sort(x_axis)
             if(x_label == "Time"):
                 sorted_x = list(map(lambda x:x.to_datetime64(),sorted_x))
-            fig = plt.figure(figsize=(15,7))
-            plt.pcolormesh(sorted_x, depth_axis, arranged_dat, shading = 'auto', cmap = cmap)
+            fig = plt.figure(figsize=plot_size)
+            plt.pcolormesh(sorted_x, depth_axis, arranged_dat, shading = 'aut', cmap = cmap, alpha = 1.0)
+            line_thick = 0.005*(np.max(sorted_x) - np.min(sorted_x))
+            if(plot_station_names):
+                for i_prof in range(len(sorted_x)):
+    #                plt.pcolormesh([sorted_x[i_prof],sorted_x[i_prof]+line_thick],
+    #                               depth_axis, 
+    #                               arranged_dat[:,[i_prof, i_prof]], shading = 'auto', cmap = cmap)
+                    plt.plot([sorted_x[i_prof], sorted_x[i_prof]],
+                              [depth_axis[0],list(depth_axis)[-1]], color = 'k', alpha = 0.5)
+            if(depth_max is not None):
+                plt.ylim(0,depth_max)
             plt.gca().invert_yaxis()
             if(x_label == "Latitude"):
                 plt.gca().invert_xaxis()
+            if(x_label == "Distance (NM)"):
+                lat_diff = lat_list[-1] - lat_list[0] # wanted W->E
+                lon_diff = lon_list[0] - lon_list[-1] # Wanted N -> S
+                if(np.abs(lon_diff)<np.abs(lat_diff)*3.0): #Magic number for when to move from lon to lat
+                    the_diff = lat_diff
+                    print("lat diff")
+                else:
+                    the_diff = lon_diff
+                    print("lon diff")
+                if(the_diff>0.0): #make sure plot is west->east or North-South
+                    plt.gca().invert_xaxis()
+                    print("Inverted", the_diff)
+            if(plot_station_names):
+                for prof_to_name in range(len(x_axis)):
+                    plt.text(x_axis[prof_to_name],np.mean(depth_axis),\
+                             station_names[prof_to_name], rotation = 90, alpha = 0.4)
+                    
 #            if(x_label == "Time"):
 #                tick_names = list(map(lambda x:x.strftime("%m-%d %H h"),x_axis))
 #                the_step = max(1,int(len(x_axis)/10))
@@ -445,7 +525,7 @@ for plot_set in plot_sets:
                       station_names[0],\
                       station_names[-1],\
                       plot_set[0]))
-            plt.ylabel("{} ({})".format(long_names[0], unit_names[0]))
+            plt.ylabel("{} ({})".format(long_names[9], unit_names[9]))
             plt.xlabel("{}".format(x_label))
             plt.xticks(rotation=15)
             plt.grid(alpha=grid_alpha)

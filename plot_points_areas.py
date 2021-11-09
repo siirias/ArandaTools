@@ -21,7 +21,7 @@ from cartopy.feature import ShapelyFeature
 import matplotlib.dates as mdates
 import math
 import gsw
-out_dir = "D:\\Data\\figures\\"
+out_dir = "C:\\Data\\figures\\aranda2021\\"
 ##Original 
 #out_filename = "map_pickup_zone.png"
 #map_area = [17.5,22.0,56.6,58.5]
@@ -29,7 +29,9 @@ out_dir = "D:\\Data\\figures\\"
 #pick_up_center = (np.mean(pick_up_lims[0]), np.mean(pick_up_lims[1]))
 #pickup_width = np.abs(np.diff(pick_up_lims)[0])*1.1
 #pickup_height = np.abs(np.diff(pick_up_lims)[1])*1.1
-
+plot_set = 'GotlandDeep2021' #['GotlandDeep','NorthernProper']
+lon_list = None
+lat_list = None
 #Circle
 out_filename = "map_pickup_zone_rectangle.png"
 map_area = [17.5,22.0,56.6,58.5]
@@ -38,9 +40,24 @@ pick_up_center = (np.mean(pick_up_lims[0]), np.mean(pick_up_lims[1]))
 pickup_width = np.abs(np.diff(pick_up_lims)[0])*1.1
 pickup_height = np.abs(np.diff(pick_up_lims)[1])*1.1
 
-
-points = [(57.3170,20.0355,'BY15')]
-
+if(plot_set == 'GotlandDeep'):
+    points = [(57.3170,20.0355,'BY15'), (57.35, 19.93,'Dep')]  
+    map_area = [17.5,22.0,56.6,58.5]
+    pickup_lims = ((19.5,20.2),(59.0,59.3))
+    out_filename = "map_pickup_zone_GD.png"
+if(plot_set == 'GotlandDeep2021'):
+    points = [(57.3170,20.0355,'BY15')]  
+    map_area = [17.5,22.0,56.6,58.5]
+    pickup_lims = ((19.5,20.2),(59.0,59.3))
+    out_filename = "map_pickup_zone_GD.png"
+if(plot_set == 'NorthernProper'):
+    points = []  
+    map_area = [18.1,23.0,58.5,60.0]
+    pickup_corner1 = (19.5,58.8 )
+    pickup_corner2 = (20.4, 59.3 )
+    pickup_w = pickup_corner2[0]-pickup_corner1[0]
+    pickup_h = pickup_corner2[1]-pickup_corner1[1]
+    out_filename = "map_argo_BPN.png"
 
 the_proj = ccrs.PlateCarree()
 fig = plt.figure(figsize=(15,10))
@@ -56,19 +73,23 @@ gl.ylabels_right = False
 ax.set_aspect('auto')
 ax.coastlines('10m')
 ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m',\
-                                        edgecolor='face', facecolor='#555570'))
-#ax.add_feature(cfeature.NaturalEarthFeature('cultural', 'admin_0_pacific_groupings', '10m',edgecolor='black',facecolor = 'none'))
-ax.add_feature(cfeature.NaturalEarthFeature('cultural', 'admin_0_boundary_lines_land', '10m',edgecolor='black',facecolor = 'none',alpha = 0.1))
+                                         edgecolor='face', facecolor='#555570'))
+# #ax.add_feature(cfeature.NaturalEarthFeature('cultural', 'admin_0_pacific_groupings', '10m',edgecolor='black',facecolor = 'none'))
+# ax.add_feature(cfeature.NaturalEarthFeature('cultural', 'admin_0_boundary_lines_land', '10m',edgecolor='black',facecolor = 'none',alpha = 0.1))
 
-EEZ = ShapelyFeature(Reader("C:\\Users\\siirias\\Downloads\\World_EEZ_v11_20191118\\eez_boundaries_v11.shp").geometries(),
+EEZ = ShapelyFeature(Reader("C:\\Data\\Layers\\Intersect_EEZ_IHO_v4_2020\\Intersect_EEZ_IHO_v4_2020.shp").geometries(),
                                 the_proj, edgecolor='blue', facecolor = 'none', linewidth = 3.0, alpha = 0.3)
 ax.add_feature(EEZ)
 
 #pick_up_area = mp.patches.Ellipse(pick_up_center, pickup_width, pickup_height,\
 #                                  color = "#55aa55", alpha = 0.3)
-
-pick_up_area = mp.patches.Rectangle((19.6,57),20.5-19.6,57.5-57.0,\
-                                  color = "#55aa55", alpha = 0.3)
+#
+if(plot_set == 'GotlandDeep' or plot_set == 'GotlandDeep2021'):
+    pick_up_area = mp.patches.Rectangle((19.6,57),20.5-19.6,57.5-57.0,\
+                                      color = "#55aa00", alpha = 0.3)
+if(plot_set == 'NorthernProper'):
+    pick_up_area = mp.patches.Rectangle(pickup_corner1,pickup_w,pickup_h,\
+                                      color = "#ff0000", alpha = 0.3)
                                            
 ax.add_artist(pick_up_area)                                      
 #plt.plot(lon_list,lat_list,'bo',transform = ccrs.PlateCarree())

@@ -27,7 +27,7 @@ import os
 #f_name = input('Anna matka: ')
 #f_name = "C:\\Users\\siirias\\Documents\\Aranda2020\\VRT_2020_syksy_current.mkx"
 #f_name = "C:\\Users\\siirias\\Documents\\Aranda2020\\VRT_2020_syksy_extrasyvanne_pitka.mkx"
-input_dir = "C:\\Users\\siirias\\Documents\\Aranda2021\\Ehdotukset\\"
+input_dir = "C:\\Users\\siirias\\Documents\\Aranda2021\\CruisePlan\\plan\\"
 files_to_handle = [i for i in os.listdir(input_dir) if i.endswith('.mkx')]
 
 for f in files_to_handle:
