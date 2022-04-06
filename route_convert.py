@@ -11,9 +11,9 @@ import re
 import datetime as dt
 #in_dir = "C:\\Users\\siirias\\Documents\\Aranda2020\\ValmiitEhdotukset\\"
 #out_dir = "D:\\Data\\ArandaDataa\\navigointiesimerkki\\"
-in_dir = 'C:\\Users\\siirias\\Documents\\Aranda2021\\CRuisePlan\\Plan\\'
-out_dir = 'C:\\Users\\siirias\\Documents\\Aranda2021\\CRuisePlan\\Plan\\'
-in_file = "EuroArgoCruise_v1.0.txt"
+in_dir = 'C:\\Users\\siirias\\Documents\\Aranda2022\\CruisePlan\\'
+out_dir = 'C:\\Users\\siirias\\Documents\\Aranda2022\\CruisePlan\\'
+in_file = "CABLE1_2022.txt"
 
 #in_file = "kokeilu_toteutunut_matka.txt"
 out_file = re.sub("\..*",".csv",in_file)
