@@ -31,7 +31,7 @@ def log2csv(in_file):
             variables[var].append(line)
         except AttributeError:
             print(line,'discarded')
-    variables = {key:variables[key] for key in ['IIGLL', 'IIYDT', 'VAT3C','VAT4C','VACNS','VASAL','VAST1','VAG11','VAPHP','VAT1C']}
+    variables = {key:variables[key] for key in ['IIGLL', 'IIYDT', 'VAT3C','VAT4C','VACNS','VASAL','VAST1','VAST2','VAG11','VAPHP','VAT1C']}
     value_no = np.min(list(map(lambda x:len(variables[x]),variables)))
     data = []
     for i in range(value_no):
@@ -47,10 +47,20 @@ def log2csv(in_file):
         if tmp[3]=='W':
             d['lon'] *= -1.0
         
-        d['wind_spd'] = float(\
-                              re.search('\$VAST1,ST1 M/S 10M\s+([\d\.]+)',\
-                                        variables['VAST1'][i]).groups()[0])
+        try:
+            d['wind_spd'] = float(\
+                                  re.search('\$VAST1,ST1 M/S 10M\s+([\d\.]+)',\
+                                            variables['VAST1'][i]).groups()[0])
+        except AttributeError:
+            d['wind_spd'] = None
                                          
+        try:
+            d['wind_spd10min'] = float(\
+                                  re.search('\$VAST1,ST1 M/S 10M\s+([\d\.]+)\s+([\d\.]+)',\
+                                            variables['VAST1'][i]).groups()[1])
+        except AttributeError:
+            d['wind_spd10min'] = None
+
         d['wind_dir'] = float(\
                               re.search('\$VAG11,G11 DEG 01M\s+([-\d\.]+)',\
                                         variables['VAG11'][i]).groups()[0])
@@ -107,7 +117,8 @@ print('Saved: '+out_dir + out_name)
 
 if do_plots:
     plt.figure()
-    plt.plot(weatherdata['time'],weatherdata['wind_spd'],'-r')
+    plt.plot(weatherdata['time'],weatherdata['wind_spd'],'.r',alpha=0.1)
+    plt.plot(weatherdata['time'],weatherdata['wind_spd10min'],'.b',alpha=0.1)
 
     plt.figure(figsize = (10,10))
     ax = plt.axes(projection=ccrs.PlateCarree())
