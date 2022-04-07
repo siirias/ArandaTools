@@ -17,7 +17,7 @@ import cartopy.feature as cfeature
 in_dir = "C:\\Users\\siirias\\Documents\\Aranda2022\\WEATHERSTATION\\cable1\\"
 in_file = "nmea-message-2022-04-05_01.25.21.log"
 
-do_plots = True
+do_plots = False
 
 out_dir = "C:\\Users\\siirias\\Documents\\Aranda2022\\WEATHERSTATION\\converted\\"
 def log2csv(in_file):
@@ -97,6 +97,14 @@ def log2csv(in_file):
     data = pd.DataFrame(data)
     return data
 
+def angle2uv(angles, strengths):
+    angles = np.array(angles)
+    strengths = np.array(strengths)
+    du = np.sin(2.0*np.pi*angles/360.0)
+    dv = np.cos(2.0*np.pi*angles/360.0)
+    du = du*strengths
+    dv = dv*strengths
+    return (du,dv)
 
 in_files=[i for i in os.listdir(in_dir) if i.endswith('.log')]
 weatherdata = pd.DataFrame()  
@@ -116,13 +124,16 @@ weatherdata.to_csv(out_dir+out_name)
 print('Saved: '+out_dir + out_name)
 
 if do_plots:
-    plt.figure()
-    plt.plot(weatherdata['time'],weatherdata['wind_spd'],'.r',alpha=0.1)
-    plt.plot(weatherdata['time'],weatherdata['wind_spd10min'],'.b',alpha=0.1)
-
     plt.figure(figsize = (10,10))
     ax = plt.axes(projection=ccrs.PlateCarree())
     ax.coastlines(resolution = '10m')
-
     plt.plot(weatherdata['lon'],weatherdata['lat'],'-.k',transform = ccrs.PlateCarree())
+
+    plt.figure()
+    plt.plot(weatherdata['time'],weatherdata['wind_spd'],'.r',alpha=0.1)
+    plt.plot(weatherdata['time'],weatherdata['wind_spd10min'],'.b',alpha=0.1)
+    dudv = angle2uv(weatherdata['wind_dir'], weatherdata['wind_spd'])
+    step=100
+    plt.quiver(weatherdata['time'][::step],0.0*weatherdata['wind_spd10min'][::step], dudv[0][::step], dudv[1][::step], scale = 500.0, alpha = 0.1, color = 'g')
+
 
