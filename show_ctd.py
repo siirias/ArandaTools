@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Sat Oct 10 15:33:34 2020
+gathers the CTD data from original files and plots a set of figures.
 
 @author: siirias
 """
@@ -27,10 +28,13 @@ D = "prDM"
 #T = "tnc90C"  # RBR Test
 #D = "prM"  # RBR Test
 #in_dir = "C:\\Users\\siirias\\Documents\\Aranda2020\\CTD_DATAA\\"
-in_dir = "D:\\Data\\ArandaVEMIVE2020\\"
+#in_dir = "D:\\Data\\ArandaVEMIVE2020\\"
+#in_dir = "C:\\Users\\siirias\\Documents\\Aranda2022\\DATA\\"
+in_dir = "C:\\Users\\siirias\\Documents\\Aranda2022\\usb-tikku\\aranda\\matka02\\ctddata\\data\\"
 #in_dir = "D:\\Data\\ArandaVEMIVE2020\\RBRTEST\\"
-out_dir = "D:\\Data\\figures\\Aranda\\"
+out_dir = "c:\\Data\\figures\\Aranda\\cable1\\"
 out_dir_add = "\\"
+weatherdata_file = "C:\\Users\\siirias\\Documents\\Aranda2022\\WEATHERSTATION\\converted\\weatherdata_202204021820_202204091628.csv" 
 close_figures_when_saved = True
 colormaps = [
         cmo.cm.deep,    # 0
@@ -67,34 +71,43 @@ fig_dpi = 300
 #highlight = "SBD1"
 highlight = None
 max_labels = 20
+add_times_to_map = True
 #start_ind = 0
 #end_ind = -1
-start_ind = 296
-end_ind = 301
-filtered_indices = [317]
-plot_sets =[
-        ['snit_1',[289,290,301,302,313,314]],
-        ['snit_2',[288,291,300,303,312,315]],
-        ['snit_3',[287,292,299,304,311,316]],
-        ['snit_4',[286,293,298,305,310,318]],
-        ['snit_5',[285,294,297,306,309,319]],
-        ['snit_6',[284,295,296,307,308,320]],
-        ['aland_snit',260,278],
-        ['aland_1',[262,263,264,265,272,273,274,275,276,277,278]],
-        ['aland_2',265,269],
-        ['north_aland',279,282],
-        ['border_snit',283,289],
-        ['snit_a',290,295],
-        ['snit_b',296,301],
-        ['snit_c',302,307],
-        ['snit_d',308,313],
-        ['snit_e',314,320],
-#        ['snit_IU',343,350],
-        ['SR5',328,342],
-        ['hila',289,320]
-        ]
+# start_ind = 296
+# end_ind = 301
+# filtered_indices = [317]
+# plot_sets =[
+#         ['snit_1',[289,290,301,302,313,314]],
+#         ['snit_2',[288,291,300,303,312,315]],
+#         ['snit_3',[287,292,299,304,311,316]],
+#         ['snit_4',[286,293,298,305,310,318]],
+#         ['snit_5',[285,294,297,306,309,319]],
+#         ['snit_6',[284,295,296,307,308,320]],
+#         ['aland_snit',260,278],
+#         ['aland_1',[262,263,264,265,272,273,274,275,276,277,278]],
+#         ['aland_2',265,269],
+#         ['north_aland',279,282],
+#         ['border_snit',283,289],
+#         ['snit_a',290,295],
+#         ['snit_b',296,301],
+#         ['snit_c',302,307],
+#         ['snit_d',308,313],
+#         ['snit_e',314,320],
+# #        ['snit_IU',343,350],
+#         ['SR5',328,342],
+#         ['hila',289,320]
+#         ]
+# map_shape = (5,10)
+
+start_ind = 58
+end_ind = 100
+filtered_indices = []
 map_shape = (5,10)
-JustOne = False
+plot_sets = [
+    ['cable1',58,100]
+             ]
+JustOne = 'cable1'
 #JustOne = 'snit_Lagsk' #False
 #JustOne = 'total' #False
 #JustOne = 'RBRTEST' #False
@@ -108,6 +121,13 @@ if(JustOne):
     if(JustOne == "snit_IU"):
         plot_sets = [['snit_IU',343,350]]
         map_area = None # None or list: [lat_min,lat_max,lon_min,lon_max]
+        #Variable info: variable number, and min max values for plots, or None to both.
+        variable_info = [[1,None,None],[4,None,None],\
+                         [7,None,None],[8,None,None]]
+    if(JustOne == "cable1"):
+        plot_sets = [['cable1',58,100]]
+        map_area = [18.0,27.0, 57,60.5]
+        map_shape = (10,10)
         #Variable info: variable number, and min max values for plots, or None to both.
         variable_info = [[1,None,None],[4,None,None],\
                          [7,None,None],[8,None,None]]
@@ -191,6 +211,8 @@ def none_min(values):#same as np.min, but ignores None values
     val = [x for x in values if x]
     return np.min(val)    
 
+if weatherdata_file != "":
+    weatherdata = pd.read_csv(weatherdata_file)
 for plot_set in plot_sets:
     print(plot_set)
     out_dir_add = plot_set[0]+"\\"
@@ -207,7 +229,7 @@ for plot_set in plot_sets:
     if(type(plot_set[1])==list): #define list of indices used
         ok_index_list = plot_set[1]
     in_files_tmp = os.listdir(in_dir)  # all files
-    in_files_tmp = [i for i in in_files_tmp if re.match(".*a\.cnv", i)] # right types
+    in_files_tmp = [i for i in in_files_tmp if re.match(".*\da\.cnv", i)] # right types
     # then separate with index
     in_files = []
     for i in in_files_tmp:
@@ -290,17 +312,17 @@ for plot_set in plot_sets:
                     longitude = 0.0
                 lons.append(longitude)
 
-#            if(re.match("\*\* Date and time",l)):
-#                try:
-#                    tmp_l= l                    
-#                    tmp_l = re.sub(",","",tmp_l) #fix extra comma in header
-#                    tmp_l = re.sub("(\d):(\d)",r"\1.\2",tmp_l) #fix : instead of . in time
-#                    the_time = re.search("\*\*.*:(.*)",tmp_l).groups()[0].strip()
-#                    the_time = dt.datetime.strptime(the_time,"%d.%m.%Y %H.%M")
-#                except:
-#                    print("WARNING, Can't parse time!: {}".format(l))
-#                    the_time = dt.datetime(2000,1,1)
-#                times.append(the_time)
+            if(re.match("\*\* Date and time",l)):
+                try:
+                    tmp_l= l                    
+                    tmp_l = re.sub(",","",tmp_l) #fix extra comma in header
+                    tmp_l = re.sub("(\d):(\d)",r"\1.\2",tmp_l) #fix : instead of . in time
+                    the_time = re.search("\*\*.*:(.*)",tmp_l).groups()[0].strip()
+                    the_time = dt.datetime.strptime(the_time,"%d.%m.%Y %H.%M")
+                except:
+                    print("WARNING, Can't parse time!: {}".format(l))
+                    the_time = dt.datetime(2000,1,1)
+                times.append(the_time)
 
             if(re.match("# start_time",l)):  
                 try:
@@ -516,14 +538,22 @@ for plot_set in plot_sets:
     ax.coastlines('10m')
     ax.add_feature(cfeature.NaturalEarthFeature('physical', 'land', '10m', edgecolor='face', facecolor='g'))
     plt.plot(lon_list,lat_list,'bo',transform = ccrs.PlateCarree())
-    plt.plot(lon_list,lat_list,'b-',transform = ccrs.PlateCarree())
-    for [n,lat,lon] in zip(station_names,lat_list,lon_list):
+    if(weatherdata_file != ""):
+        plt.plot(weatherdata['lon'],weatherdata['lat'],'k--', alpha = 0.2, transform = ccrs.PlateCarree())
+#    plt.plot(lon_list,lat_list,'b-',transform = ccrs.PlateCarree())
+    for [n,t,lat,lon] in zip(station_names,times, lat_list,lon_list):
         if(map_area is not None and \
                lon>map_area[0] and\
                lon<map_area[1] and\
                lat>map_area[2] and\
                lat<map_area[3]):
-            plt.text(lon,lat,n,transform = ccrs.PlateCarree(),alpha=0.5)
+            text = n
+            tsize = 10.0
+            if add_times_to_map:
+                text = "{}({})".format(text, t.strftime("%m.%d. %H"))
+                tsize = 5.0
+            plt.text(lon,lat,text,transform = ccrs.PlateCarree(),\
+                     alpha=0.5, size = tsize, rotation = 30.0)
     plt.title("{}, from {} to {} ({})".format(long_names[variable],\
               station_names[0],\
               station_names[-1],\

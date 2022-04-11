@@ -7,13 +7,13 @@ Created on Fri May 21 08:39:58 2021
 import re
 import datetime as dt
 import numpy as np
-in_dir = "D:\\Data\\EuroArgoCruise\\"
-out_dir = "D:\\Data\\EuroArgoCruise\\"
+in_dir = "C:\\Users\\siirias\\Documents\\Aranda2022\\"
+out_dir = in_dir
 in_file = "ARAINDEX.DAT"
 out_file = "report{}.txt".format(dt.datetime.now().strftime("%d%m%Y"))
 out_file2 = "report:ist_UTC{}.txt".format(dt.datetime.now().strftime("%d%m%Y"))
 
-first_index = 101
+first_index = 58
 lines = open(in_dir+in_file).readlines()
 out_file = open(out_dir+out_file,'w')
 for l in lines:
@@ -29,12 +29,23 @@ for l in lines:
         depth = float(data[5])
         start_time = dt.datetime.strptime(data[6]+data[7], "%Y%m%d%H%M") +\
                         dt.timedelta(hours=0)
-        out_file.write("Indeksi {:04}, {} {:.0f}° {:0.3f}' N, {:.0f}° {:0.3f}' E, klo {}, syvyys {} m\n".format(
+
+        # out_file.write("Indeksi {:04}, {} {:.0f}° {:0.3f}' N, {:.0f}° {:0.3f}' E, klo {}, syvyys {} m\n".format(
+        #         the_index,
+        #         point_name,
+        #         np.floor(lat), (lat-np.floor(lat))*60.0,
+        #         np.floor(lon), (lon-np.floor(lon))*60.0,
+        #         start_time.strftime("%H.%M"),
+        #         np.round(depth)
+        #         ))
+
+        out_file.write("Index {:04}, {} {:.0f}° {:0.3f}' N, {:.0f}° {:0.3f}' E, time {}, depth {} m\n".format(
                 the_index,
                 point_name,
                 np.floor(lat), (lat-np.floor(lat))*60.0,
                 np.floor(lon), (lon-np.floor(lon))*60.0,
-                start_time.strftime("%H.%M"),
+                start_time.strftime("%Y-%m-%d, %H.%M"),
                 np.round(depth)
                 ))
+
 out_file.close()
